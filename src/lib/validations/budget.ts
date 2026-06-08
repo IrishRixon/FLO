@@ -6,7 +6,7 @@ export const createBudgetSchema = z.object({
     .string()
     .uuid('Invalid category'),
   amount: z
-    .number({ invalid_type_error: 'Amount must be a number' })
+    .number({ error: 'Amount must be a number' })
     .positive('Budget amount must be greater than zero')
     .max(999_999_999.99, 'Amount is too large'),
   month: z
