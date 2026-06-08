@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from 'react';
 import { Search, UtensilsCrossed, ShoppingBag, Car, Heart, Home, Popcorn, Smartphone } from 'lucide-react';
 

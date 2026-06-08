@@ -1,3 +1,5 @@
+"use client"
+
 import { Sparkles, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 

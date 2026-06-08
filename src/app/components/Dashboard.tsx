@@ -1,3 +1,5 @@
+"use client";
+
 import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { TrendingUp, Calendar, UtensilsCrossed, ShoppingBag, Car, Heart, Home } from 'lucide-react';
 
