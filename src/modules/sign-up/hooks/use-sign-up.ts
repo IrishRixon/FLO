@@ -52,7 +52,7 @@ export const useSignUpHook = () => {
         }
 
         if (data.user && data.session) {
-            router.push("/dashboard");
+            router.push("/");
             router.refresh();
             return;
         }
