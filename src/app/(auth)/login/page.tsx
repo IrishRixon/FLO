@@ -9,7 +9,7 @@ import { Mail, Lock, Sparkles, Loader2 } from 'lucide-react';
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/dashboard';
+  const next = searchParams.get('next') || '/';
   const supabase = createClient();
 
   const [email, setEmail] = useState('');

@@ -11,6 +11,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const pathname = usePathname();
 
+  const urlExceptions = ["/login", "/signup"]
   const navLinks = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/transactions', label: 'Transactions', icon: Receipt },
@@ -19,7 +20,7 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="flex h-screen w-screen bg-background">
-      <aside className="w-60 bg-surface border-r border-sidebar-border flex flex-col">
+      {!urlExceptions.includes(pathname) && <aside className="w-60 bg-surface border-r border-sidebar-border flex flex-col">
         <div className="p-6 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary"></div>
           <h1 className="text-xl font-medium" style={{ fontFamily: 'var(--font-display)' }}>
@@ -61,7 +62,7 @@ export function Layout({ children }: LayoutProps) {
             </button>
           </div>
         </div>
-      </aside>
+      </aside>}
 
       <main className="flex-1 overflow-auto">
         {children}
