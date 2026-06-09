@@ -148,19 +148,7 @@ export function SignUpPage() {
             <div className="p-6 sm:p-8">
               <Form {...form}>
                 <form
-                  onSubmit={() => {
-                    try {
-                      form.handleSubmit(onSubmit)
-                      form.reset();
-
-                    } catch (err: unknown) {
-                      console.error("Signup error:", err);
-                      setErrorMsg("An unexpected error occurred. Please try again.");
-                    }
-                    finally {
-                      setLoading(false);
-                    }
-                  }}
+                  onSubmit={form.handleSubmit(onSubmit)}
                   className="space-y-4"
                 >
                   <FormField

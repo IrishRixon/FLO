@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Define protected routes and auth routes
-  const protectedRoutes = ['/dashboard', '/transactions', '/budget', '/insights'];
+  const protectedRoutes = ['/', '/transactions', '/budget', '/insights'];
   const isProtectedRoute = protectedRoutes.some(
     (route) => path === route || path.startsWith(`${route}/`)
   );
@@ -46,6 +46,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public files (svg, png, jpg, jpeg, gif, webp)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
