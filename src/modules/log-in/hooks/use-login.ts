@@ -47,13 +47,42 @@ export const useLoginHook = () => {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/");
     router.refresh();
+  }
+
+  async function handleLogout() {
+    setErrorMsg(null);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setErrorMsg(error.message);
+      return;
+    }
+    router.push("/login");
+    router.refresh();
+  }
+
+  async function handleForgotPassword(email: string) {
+    setErrorMsg(null);
+    setLoading(true);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/api/auth/callback?next=/reset-password`,
+    });
+
+    setLoading(false);
+    if (error) {
+      setErrorMsg(error.message);
+      return null;
+    }
+    return true;
   }
 
   return {
     onSubmit,
     handleGoogleLogin,
+    handleLogout,
+    handleForgotPassword,
     loading,
     setLoading,
     errorMsg,

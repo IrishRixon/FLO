@@ -7,6 +7,7 @@ import { Mail, Lock, Loader2 } from "lucide-react";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -36,6 +37,7 @@ export function LoginPage() {
 
   const {
     errorMsg,
+    handleForgotPassword,
     handleGoogleLogin,
     loading,
     onSubmit,
@@ -161,9 +163,28 @@ export function LoginPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel className="text-xs text-text-secondary font-medium">
-                          Password
-                        </FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="text-xs text-text-secondary font-medium">
+                            Password
+                          </FormLabel>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const email = form.getValues("email");
+                              if (!email) {
+                                form.setError("email", { message: "Enter your email first" });
+                                return;
+                              }
+                              const result = await handleForgotPassword(email);
+                              if (result) {
+                                toast.success("Password reset link sent to your email");
+                              }
+                            }}
+                            className="text-xs text-primary hover:underline font-medium"
+                          >
+                            Forgot password?
+                          </button>
+                        </div>
                         <div className="relative">
                           <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary">
                             <Lock size={16} />

@@ -2,6 +2,7 @@
 
 import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { TrendingUp, Calendar, UtensilsCrossed, ShoppingBag, Car, Heart, Home } from 'lucide-react';
+import { Budget } from '@/types';
 
 const spendingData = [
   { id: 1, date: 'Apr 16', amount: 850 },
@@ -40,10 +41,14 @@ const transactions = [
   { id: 6, category: 'Bills', icon: Home, description: 'Electricity bill', date: 'May 13', amount: -2400, color: '#6B7280' },
 ];
 
-export function Dashboard() {
+interface Props {
+  budgetObj: Budget | null
+}
+
+export function Dashboard({ budgetObj }: Props) {
   const totalSpent = 18600;
-  const budget = 25000;
   const biggestCategory = categoryData[0];
+  const budget = budgetObj?.amount || 0;
   const daysLeft = 15;
   const dailyBudget = Math.round((budget - totalSpent) / daysLeft);
 

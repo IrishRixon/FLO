@@ -3,6 +3,7 @@ import '@/styles/index.css';
 import { geist, geistMono } from '@/lib/fonts';
 import { Layout } from '@/app/components/Layout';
 import { TransactionFAB } from '@/app/components/TransactionFAB';
+import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
   title: 'Flo — AI Finance Tracker',
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body>
         <Layout>{children}</Layout>
         <TransactionFAB />
+        <Toaster position="top-center" theme='dark' richColors/>
       </body>
     </html>
   );
