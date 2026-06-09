@@ -47,7 +47,7 @@ export const useLoginHook = () => {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/");
     router.refresh();
   }
 

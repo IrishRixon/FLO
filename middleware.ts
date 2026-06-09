@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
   // Redirect to dashboard if user is authenticated and tries to access login/signup
   if (isAuthRoute && user) {
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    url.pathname = '/';
     return NextResponse.redirect(url);
   }
 

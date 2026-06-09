@@ -1,20 +1,16 @@
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import { SignupValues } from "../schema/sign-up.schema";
 
 export const useSignUpHook = () => {
     const [loading, setLoading] = useState(false);
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
     const router = useRouter();
     const supabase = createClient();
 
     async function handleGoogleSignup() {
-        setErrorMsg(null);
-        setSuccessMsg(null);
-
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
@@ -23,16 +19,14 @@ export const useSignUpHook = () => {
                 },
             });
 
-            if (error) setErrorMsg(error.message);
+            if (error) toast.error(error.message);
         } catch (err: unknown) {
             console.error("Google OAuth signup error:", err);
-            setErrorMsg("Failed to initiate Google sign up.");
+            toast.error("Failed to initiate Google sign up.");
         }
     }
 
     async function onSubmit(values: SignupValues) {
-        setErrorMsg(null);
-        setSuccessMsg(null);
         setLoading(true);
 
         const { data, error } = await supabase.auth.signUp({
@@ -47,19 +41,29 @@ export const useSignUpHook = () => {
         });
 
         if (error) {
-            setErrorMsg(error.message);
+            toast.error(error.message);
+            setLoading(false);
+            return;
+        }
+
+        // If the user already exists, identities array will be empty
+        if (data.user?.identities?.length === 0) {
+            toast.error("This email is already registered. Please log in instead.");
+            setLoading(false);
             return;
         }
 
         if (data.user && data.session) {
             router.push("/");
             router.refresh();
+            setLoading(false);
             return;
         }
 
-        setSuccessMsg(
+        toast.success(
             "Sign up successful! Please check your email to verify your account.",
         );
+        setLoading(false);
     }
 
     function getPasswordStrength(pass: string) {
@@ -92,10 +96,6 @@ export const useSignUpHook = () => {
         handleGoogleSignup,
         loading,
         setLoading,
-        errorMsg,
-        setErrorMsg,
-        successMsg,
-        setSuccessMsg,
         getPasswordStrength
     }
 }

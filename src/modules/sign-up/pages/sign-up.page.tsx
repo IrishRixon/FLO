@@ -2,19 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Mail, Lock, User, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Card } from "@/app/components/ui/card";
 
 import {
@@ -42,13 +37,9 @@ export function SignUpPage() {
   });
 
   const {
-    errorMsg, 
     handleGoogleSignup, 
     loading,
     onSubmit, 
-    successMsg, 
-    setErrorMsg, 
-    setLoading, 
     getPasswordStrength
   } = useSignUpHook();
   
@@ -121,28 +112,6 @@ export function SignUpPage() {
               Sign up to take control of your financial future today.
             </p>
           </div>
-
-          {errorMsg && (
-            <Alert variant="destructive" className="border-destructive/20">
-              <AlertTitle className="flex items-center gap-2">
-                <span aria-hidden>⚠️</span>
-                <span>Error</span>
-              </AlertTitle>
-              <AlertDescription>{errorMsg}</AlertDescription>
-            </Alert>
-          )}
-
-          {successMsg && (
-            <Alert variant="default" className="border-secondary/20">
-              <AlertTitle className="flex items-center gap-2">
-                <span aria-hidden>✅</span>
-                <span>Success</span>
-              </AlertTitle>
-              <AlertDescription className="text-secondary">
-                {successMsg}
-              </AlertDescription>
-            </Alert>
-          )}
 
           <Card className="bg-[#0F0F10] border-border">
             <div className="p-6 sm:p-8">
@@ -281,7 +250,7 @@ export function SignUpPage() {
                             <Checkbox
                               checked={field.value}
                               onCheckedChange={(v) => field.onChange(!!v)}
-                              className="mt-1 w-4 h-4 bg-[#1A1A1E] border-border rounded text-primary focus:ring-primary focus:ring-offset-0 focus:outline-none cursor-pointer"
+                              className="mt-1 w-4 h-4 border-border rounded text-primary focus:ring-primary focus:ring-offset-0 focus:outline-none cursor-pointer"
                             />
                           </FormControl>
                           <FormLabel className="text-xs text-text-secondary leading-snug cursor-pointer select-none">
