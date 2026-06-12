@@ -45,7 +45,7 @@ export interface Transaction {
 
 /** Transaction joined with its category (for display) */
 export interface TransactionWithCategory extends Transaction {
-  category: Category;
+  categories: Category;
 }
 
 /** Row from `budgets` table */
