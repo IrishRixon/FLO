@@ -27,7 +27,7 @@ export async function getAllTransactions(
       .from("transactions")
       .select("*, categories(id, name, icon, color)")
       .eq("user_id", user.id)
-      .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
       .range(from, to)
       .overrideTypes<TransactionWithCategory[]>();
 

@@ -48,7 +48,7 @@ export async function getTransactions(): Promise<TransactionWithCategory[] | nul
             .eq('user_id', user?.id)
             .gte('date', startOfMonth)
             .lt('date', startOfNextMonth)
-            .order('date', { ascending: false })
+            .order('created_at', { ascending: false })
             .overrideTypes<TransactionWithCategory[]>()
 
         return transactions ?? null;
