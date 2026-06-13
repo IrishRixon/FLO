@@ -1,75 +1,152 @@
 "use client";
 
-import { useState } from 'react';
-import { Search, UtensilsCrossed, ShoppingBag, Car, Heart, Home, Popcorn, Smartphone } from 'lucide-react';
+import { useState, useMemo } from "react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { iconMap } from "@/iconlist/icon-list";
+import { TransactionWithCategory } from "@/types";
 
-const categories = [
-  { name: 'All', count: 42 },
-  { name: 'Food', count: 15 },
-  { name: 'Transport', count: 8 },
-  { name: 'Bills', count: 6 },
-  { name: 'Entertainment', count: 7 },
-  { name: 'Health', count: 6 },
-];
+interface TransactionsProps {
+  initialTransactions: TransactionWithCategory[];
+  currentPage: number;
+  totalPages: number;
+  total: number;
+  pageSize: number;
+}
 
-const allTransactions = [
-  {
-    date: 'Today',
-    items: [
-      { id: 1, icon: UtensilsCrossed, description: 'Breakfast at The Commons', category: 'Food', amount: -285, color: '#7C6EF7', time: '9:30 AM' },
-      { id: 2, icon: Car, description: 'Grab to office', category: 'Transport', amount: -120, color: '#4ECDC4', time: '8:15 AM' },
-    ],
-  },
-  {
-    date: 'Yesterday',
-    items: [
-      { id: 3, icon: ShoppingBag, description: 'Uniqlo online order', category: 'Shopping', amount: -1850, color: '#FFB84D', time: '6:20 PM' },
-      { id: 4, icon: UtensilsCrossed, description: 'Dinner with friends', category: 'Food', amount: -680, color: '#7C6EF7', time: '7:45 PM' },
-      { id: 5, icon: Popcorn, description: 'Movie tickets', category: 'Entertainment', amount: -450, color: '#FF8A80', time: '3:15 PM' },
-      { id: 6, icon: Car, description: 'Grab ride home', category: 'Transport', amount: -95, color: '#4ECDC4', time: '11:30 PM' },
-    ],
-  },
-  {
-    date: 'May 14',
-    items: [
-      { id: 7, icon: Heart, description: 'Gym membership', category: 'Health', amount: -1200, color: '#86EFAC', time: '10:00 AM' },
-      { id: 8, icon: UtensilsCrossed, description: 'Lunch meeting', category: 'Food', amount: -520, color: '#7C6EF7', time: '12:30 PM' },
-      { id: 9, icon: Smartphone, description: 'Spotify Premium', category: 'Entertainment', amount: -149, color: '#FF8A80', time: '9:00 AM' },
-    ],
-  },
-  {
-    date: 'May 13',
-    items: [
-      { id: 10, icon: Home, description: 'Electricity bill', category: 'Bills', amount: -2400, color: '#6B7280', time: '8:00 AM' },
-      { id: 11, icon: ShoppingBag, description: 'Skincare products', category: 'Shopping', amount: -890, color: '#FFB84D', time: '4:45 PM' },
-      { id: 12, icon: Car, description: 'Grab to client meeting', category: 'Transport', amount: -165, color: '#4ECDC4', time: '2:00 PM' },
-    ],
-  },
-  {
-    date: 'May 12',
-    items: [
-      { id: 13, icon: UtensilsCrossed, description: 'Coffee and pastry', category: 'Food', amount: -180, color: '#7C6EF7', time: '3:30 PM' },
-      { id: 14, icon: Popcorn, description: 'Concert tickets', category: 'Entertainment', amount: -2500, color: '#FF8A80', time: '7:00 PM' },
-    ],
-  },
-];
+function formatDateLabel(dateStr: string): string {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const date = new Date(dateStr + "T00:00:00");
+  const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-export function Transactions() {
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const diffDays = Math.floor(
+    (today.getTime() - dateDay.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+  });
+}
+
+function groupByDate(
+  transactions: TransactionWithCategory[]
+): { dateLabel: string; items: TransactionWithCategory[] }[] {
+  const grouped: Record<string, TransactionWithCategory[]> = {};
+
+  for (const t of transactions) {
+    const label = formatDateLabel(t.date);
+    if (!grouped[label]) grouped[label] = [];
+    grouped[label].push(t);
+  }
+
+  return Object.entries(grouped).map(([dateLabel, items]) => ({
+    dateLabel,
+    items,
+  }));
+}
+
+export function Transactions({
+  initialTransactions,
+  currentPage,
+  totalPages,
+  total,
+  pageSize,
+}: TransactionsProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Derive categories from the full dataset (using the initial total for counts)
+  const categories = useMemo(() => {
+    const categoryMap = new Map<
+      string,
+      { name: string; icon: string; color: string; count: number }
+    >();
+
+    for (const t of initialTransactions) {
+      if (!t.categories) continue;
+      const cat = t.categories;
+      const existing = categoryMap.get(cat.name);
+      if (existing) {
+        existing.count++;
+      } else {
+        categoryMap.set(cat.name, {
+          name: cat.name,
+          icon: cat.icon || "folder",
+          color: cat.color || "#6B7280",
+          count: 1,
+        });
+      }
+    }
+
+    return [
+      { name: "All", count: total, icon: "folder", color: "#6B7280" },
+      ...Array.from(categoryMap.values()),
+    ];
+  }, [initialTransactions, total]);
+
+  // Filter transactions based on category and search
+  const filteredTransactions = useMemo(() => {
+    let filtered = initialTransactions;
+
+    if (selectedCategory !== "All") {
+      filtered = filtered.filter(
+        (t) => t.categories?.name === selectedCategory
+      );
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (t) =>
+          t.description.toLowerCase().includes(q) ||
+          t.categories?.name.toLowerCase().includes(q)
+      );
+    }
+
+    return filtered;
+  }, [initialTransactions, selectedCategory, searchQuery]);
+
+  const grouped = useMemo(() => groupByDate(filteredTransactions), [filteredTransactions]);
+
+  const goToPage = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (page === 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(page));
+    }
+    const qs = params.toString();
+    router.push(qs ? `/transactions?${qs}` : "/transactions");
+  };
 
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h2 className="text-2xl font-medium mb-1" style={{ fontFamily: 'var(--font-display)' }}>
+        <h2
+          className="text-2xl font-medium mb-1"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
           Transactions
         </h2>
-        <p className="text-text-secondary text-sm">View and manage all your transactions</p>
+        <p className="text-text-secondary text-sm">
+          View and manage all your transactions
+        </p>
       </div>
 
       <div className="mb-6">
         <div className="relative mb-4">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-secondary" size={18} />
+          <Search
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-secondary"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Search transactions..."
@@ -79,15 +156,15 @@ export function Transactions() {
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {categories.map((category) => (
             <button
               key={category.name}
               onClick={() => setSelectedCategory(category.name)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedCategory === category.name
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-surface text-text-secondary hover:text-foreground border border-border'
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-surface text-text-secondary hover:text-foreground border border-border"
               }`}
             >
               {category.name}
@@ -97,55 +174,140 @@ export function Transactions() {
         </div>
       </div>
 
+      {/* Transaction list */}
       <div className="space-y-6">
-        {allTransactions.map((group) => (
-          <div key={group.date}>
-            <h3 className="text-sm font-medium text-text-secondary mb-3 px-1">{group.date}</h3>
-            <div className="bg-surface rounded-xl border border-border shadow-sm divide-y divide-border">
-              {group.items.map((transaction) => {
-                const Icon = transaction.icon;
-                return (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center gap-4 px-5 py-4 hover:bg-[#1E1E22] transition-colors cursor-pointer first:rounded-t-xl last:rounded-b-xl"
-                  >
+        {grouped.length === 0 ? (
+          <p className="text-text-secondary text-center py-12">
+            No transactions found.
+          </p>
+        ) : (
+          grouped.map((group) => (
+            <div key={group.dateLabel}>
+              <h3 className="text-sm font-medium text-text-secondary mb-3 px-1">
+                {group.dateLabel}
+              </h3>
+              <div className="bg-surface rounded-xl border border-border shadow-sm divide-y divide-border">
+                {group.items.map((transaction) => {
+                  const iconName = transaction.categories?.icon || "folder";
+                  const Icon = iconMap[iconName];
+                  const color = transaction.categories?.color || "#6B7280";
+                  const amount = transaction.amount;
+                  const isExpense =
+                    transaction.type === "expense" || amount < 0;
+
+                  return (
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${transaction.color}20` }}
+                      key={transaction.id}
+                      className="flex items-center gap-4 px-5 py-4 hover:bg-[#1E1E22] transition-colors cursor-pointer first:rounded-t-xl last:rounded-b-xl"
                     >
-                      <Icon size={18} style={{ color: transaction.color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{transaction.description}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: `${transaction.color}26`,
-                            color: transaction.color,
-                          }}
-                        >
-                          {transaction.category}
-                        </span>
-                        <span className="text-xs text-text-secondary">{transaction.time}</span>
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `${color}20` }}
+                      >
+                        {Icon ? (
+                          <Icon size={18} style={{ color }} />
+                        ) : (
+                          <div
+                            className="w-4 h-4 rounded"
+                            style={{ backgroundColor: color }}
+                          />
+                        )}
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          {transaction.description}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {transaction.categories && (
+                            <span
+                              className="text-xs px-2 py-0.5 rounded-full"
+                              style={{
+                                backgroundColor: `${color}26`,
+                                color,
+                              }}
+                            >
+                              {transaction.categories.name}
+                            </span>
+                          )}
+                          <span className="text-xs text-text-secondary">
+                            {new Date(
+                              transaction.date + "T" + (transaction.created_at?.split("T")[1] || "00:00:00")
+                            ).toLocaleTimeString("en-US", {
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      <p
+                        className="text-base font-medium flex-shrink-0"
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          color: isExpense ? "#FF6B6B" : "#4ECDC4",
+                        }}
+                      >
+                        {isExpense ? "-" : "+"}₱
+                        {Math.abs(amount).toLocaleString()}
+                      </p>
                     </div>
-                    <p
-                      className="text-base font-medium flex-shrink-0"
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        color: transaction.amount < 0 ? '#FF6B6B' : '#4ECDC4',
-                      }}
-                    >
-                      {transaction.amount < 0 ? '-' : '+'}₱{Math.abs(transaction.amount).toLocaleString()}
-                    </p>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-8 pb-4">
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage <= 1}
+            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-surface border border-border text-text-secondary hover:text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={16} />
+            Previous
+          </button>
+
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => {
+                // Show first, last, current, and neighbors
+                if (p === 1 || p === totalPages) return true;
+                if (Math.abs(p - currentPage) <= 1) return true;
+                return false;
+              })
+              .map((p, idx, arr) => (
+                <span key={p} className="flex items-center">
+                  {idx > 0 && arr[idx - 1] !== p - 1 && (
+                    <span className="px-1 text-text-secondary">...</span>
+                  )}
+                  <button
+                    onClick={() => goToPage(p)}
+                    className={`w-9 h-9 rounded-lg text-sm font-medium transition-all ${
+                      p === currentPage
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-surface border border-border text-text-secondary hover:text-foreground"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                </span>
+              ))}
+          </div>
+
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-surface border border-border text-text-secondary hover:text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,58 +1,43 @@
-import {
-  Wallet, PiggyBank, CreditCard, Banknote, Coins,
-  TrendingUp, TrendingDown, LineChart, Percent,
-  Receipt, Landmark, HandCoins,
-
-  ShoppingCart, Home, Car, Heart, Utensils,
-  Film, Gamepad2, Plane, Gift,
-
-  Briefcase, Laptop,
-
-  ArrowUpRight, ArrowDownLeft, Repeat,
-
-  Tag, Folder
-} from "lucide-react";
+import * as LucideIcons from "lucide-react";
 
 export const iconMap: Record<string, React.ComponentType<{ size?: number; style?: React.CSSProperties }>> = {
-
-  // ── Food & Drink ──────────────────────────
-   // Core financial
-  "income": TrendingUp,
-  "expense": TrendingDown,
-  "balance": Wallet,
-  "cash": Banknote,
-  "coins": Coins,
-  "savings": PiggyBank,
-  "card": CreditCard,
-  "receipt": Receipt,
-  "bank": Landmark,
-  "loan": HandCoins,
+  // ── Core financial ──────────────────────────
+  "income": LucideIcons.TrendingUp,
+  "expense": LucideIcons.TrendingDown,
+  "balance": LucideIcons.Wallet,
+  "cash": LucideIcons.Banknote,
+  "coins": LucideIcons.Coins,
+  "savings": LucideIcons.PiggyBank,
+  "card": LucideIcons.CreditCard,
+  "receipt": LucideIcons.Receipt,
+  "bank": LucideIcons.Landmark,
+  "loan": LucideIcons.HandCoins,
 
   // Analytics
-  "analytics": LineChart,
-  "percentage": Percent,
+  "analytics": LucideIcons.LineChart,
+  "percentage": LucideIcons.Percent,
 
   // Transactions
-  "transfer": Repeat,
-  "incoming": ArrowDownLeft,
-  "outgoing": ArrowUpRight,
+  "transfer": LucideIcons.Repeat,
+  "incoming": LucideIcons.ArrowDownLeft,
+  "outgoing": LucideIcons.ArrowUpRight,
 
   // Categories (generic, reusable)
-  "shopping": ShoppingCart,
-  "housing": Home,
-  "transport": Car,
-  "health": Heart,
-  "food": Utensils,
-  "entertainment": Film,
-  "gaming": Gamepad2,
-  "travel": Plane,
-  "gifts": Gift,
+  "shopping": LucideIcons.ShoppingCart,
+  "housing": LucideIcons.Home,
+  "transport": LucideIcons.Car,
+  "health": LucideIcons.Heart,
+  "food": LucideIcons.Utensils,
+  "entertainment": LucideIcons.Film,
+  "gaming": LucideIcons.Gamepad2,
+  "travel": LucideIcons.Plane,
+  "gifts": LucideIcons.Gift,
 
   // Work / income source
-  "salary": Briefcase,
-  "freelance": Laptop,
+  "salary": LucideIcons.Briefcase,
+  "freelance": LucideIcons.Laptop,
 
   // Meta
-  "category": Tag,
-  "folder": Folder,
+  "category": LucideIcons.Tag,
+  "folder": LucideIcons.Folder,
 };
