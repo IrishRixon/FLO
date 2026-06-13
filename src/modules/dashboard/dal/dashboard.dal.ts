@@ -44,11 +44,10 @@ export async function getTransactions(): Promise<TransactionWithCategory[] | nul
         const { data: transactions } = await supabase
             .from('transactions')
             .select('*, categories(name, icon, color)')
-            .eq('type', 'expense')
             .eq('user_id', user?.id)
             .gte('date', startOfMonth)
             .lt('date', startOfNextMonth)
-            .order('date', { ascending: false })
+            .order('created_at', { ascending: false })
             .overrideTypes<TransactionWithCategory[]>()
 
         return transactions ?? null;

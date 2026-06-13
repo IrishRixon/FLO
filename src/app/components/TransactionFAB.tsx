@@ -11,7 +11,6 @@ import { z } from 'zod';
 import { iconMap } from '@/iconlist/icon-list';
 import { Category } from '@/types';
 import { toast } from 'sonner';
-
 import {
   Form,
   FormField,
@@ -155,6 +154,25 @@ export function TransactionFAB({ onSuccess }: TransactionFABProps) {
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || 'Failed to save transaction');
+      }
+
+      // If income, add the amount to the current month's budget
+      if (data.type === 'income') {
+        try {
+          const budgetRes = await fetch('/api/budgets', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ addAmount: data.amount }),
+          });
+
+          if (!budgetRes.ok) {
+            const err = await budgetRes.json();
+            console.error('Failed to update budget:', err);
+          }
+        } catch (budgetError) {
+          // Non-critical: transaction was saved, just log the budget error
+          console.error('Budget update error:', budgetError);
+        }
       }
 
       toast.success('Transaction saved');

@@ -51,8 +51,9 @@ interface Props {
 }
 
 export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory }: Props) {
-  const totalSpent = getTotalSpent(transactionsWithCategory);
-  const spendingData = getSpendingData(transactionsWithCategory);
+  const transactionsExpense = transactionsWithCategory?.filter((t) => t.type === "expense");
+  const totalSpent = getTotalSpent(transactionsExpense || null);
+  const spendingData = getSpendingData(transactionsExpense || null);
   const budget = budgetObj?.amount || 0;
   const daysLeft = getDaysLeftInMonth();
   const dailyBudget = daysLeft > 0 ? Math.round((budget - totalSpent) / daysLeft) : 0;  

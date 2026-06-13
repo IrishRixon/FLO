@@ -57,8 +57,6 @@ export function useAICategory(
 
     workerRef.current.onmessage = (event) => {
       const { type, category, typeResult, message } = event.data
-
-      console.log(typeResult, "type result");
       
       if (type === 'loading') {
         setIsModelLoading(true)
