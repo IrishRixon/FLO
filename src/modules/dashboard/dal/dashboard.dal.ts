@@ -44,7 +44,6 @@ export async function getTransactions(): Promise<TransactionWithCategory[] | nul
         const { data: transactions } = await supabase
             .from('transactions')
             .select('*, categories(name, icon, color)')
-            .eq('type', 'expense')
             .eq('user_id', user?.id)
             .gte('date', startOfMonth)
             .lt('date', startOfNextMonth)
