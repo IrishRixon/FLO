@@ -1,4 +1,5 @@
 import { requireAuth } from '@/lib/auth/guard';
+import { TransactionFAB } from '@/app/components/TransactionFAB';
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -10,5 +11,10 @@ interface ProtectedLayoutProps {
  */
 export default async function ProtectedLayout({ children }: ProtectedLayoutProps) {
   await requireAuth();
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <TransactionFAB />
+    </>
+  );
 }

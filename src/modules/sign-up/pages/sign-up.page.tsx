@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Mail, Lock, User, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +26,9 @@ import { signupSchema, SignupValues } from "@/modules/sign-up/schema/sign-up.sch
 import { useSignUpHook } from "@/modules/sign-up/hooks/use-sign-up";
 
 export function SignUpPage() {
-    const form = useForm<SignupValues>({
+  const [checkingSession, setCheckingSession] = React.useState(true);
+
+  const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       fullName: "",
@@ -36,6 +40,22 @@ export function SignUpPage() {
     mode: "onSubmit",
   });
 
+  const router = useRouter();
+
+  // Check if user is already authenticated on mount. If so, redirect to home.
+  React.useEffect(() => {
+    async function checkSession() {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        router.replace("/");
+      } else {
+        setCheckingSession(false);
+      }
+    }
+    checkSession();
+  }, [router]);
+
   const {
     handleGoogleSignup, 
     loading,
@@ -45,6 +65,15 @@ export function SignUpPage() {
   
   const password = form.watch("password");
   const strength = getPasswordStrength(password);
+
+  // Show a loading spinner while checking for an existing session.
+  if (checkingSession) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-[#0F0F10]">
+        <Loader2 size={24} className="animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen flex">

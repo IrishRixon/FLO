@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +27,8 @@ import { loginSchema, LoginValues } from "@/modules/log-in/schema/login.schema";
 import { useLoginHook } from "@/modules/log-in/hooks/use-login";
 
 export function LoginPage() {
+  const [checkingSession, setCheckingSession] = React.useState(true);
+
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -48,12 +51,30 @@ export function LoginPage() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/";
 
-  // Keep next param behavior consistent with the previous implementation.
-  // (Hook currently routes to /dashboard; we can override by setting where we go after auth.)
   const router = useRouter();
+
+  // Check if user is already authenticated on mount. If so, redirect to home.
   React.useEffect(() => {
-    // no-op: ensures hook routes still work; we handle next after successful login by listening to URL changes.
-  }, [next, router]);
+    async function checkSession() {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        router.replace("/");
+      } else {
+        setCheckingSession(false);
+      }
+    }
+    checkSession();
+  }, [router]);
+
+  // Show a loading spinner while checking for an existing session.
+  if (checkingSession) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-[#0F0F10]">
+        <Loader2 size={24} className="animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen flex">
