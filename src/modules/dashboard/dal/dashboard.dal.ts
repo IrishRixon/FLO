@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Budget, MonthlySpending, Transaction, TransactionType, TransactionWithCategory } from "@/types";
 
-async function constraints() {
+export async function constraints() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser();
 

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { constraints } from "@/modules/dashboard/dal/dashboard.dal";
 import type { CachedInsight, InsightData } from "@/types/insights";
 
 export async function getInsightForMonth(
@@ -112,13 +113,14 @@ export async function getBudgetVsActualForMonth(
   monthStr: string
 ): Promise<BudgetVsActualRow[]> {
   try {
-    const supabase = await createClient();
+    const { startOfMonth, startOfNextMonth, supabase, user } = await constraints();
 
     const { data, error } = await supabase
       .from("budget_vs_actual")
       .select("*")
       .eq("user_id", userId)
-      .eq("month", monthStr)
+      .gte('month', startOfMonth)
+      .lt('month', startOfNextMonth)
       .overrideTypes<BudgetVsActualRow[]>();
 
     if (error) {

@@ -3,6 +3,8 @@
 import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { Budget, MonthlySpending, TransactionWithCategory } from '@/types';
 import { iconMap } from '@/iconlist/icon-list';
+import { ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
 function formatDateLabel(dateStr: string): string {
   const date = new Date(dateStr);
@@ -25,7 +27,7 @@ function getTotalSpent(transactions: TransactionWithCategory[] | null): number {
 
 function getSpendingData(transactions: TransactionWithCategory[] | null): { date: string; amount: number }[] {
   if (!transactions) return [];
-  
+
   const grouped: Record<string, number> = {};
   transactions.forEach(t => {
     const label = formatDateLabel(t.date);
@@ -56,7 +58,7 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
   const spendingData = getSpendingData(transactionsExpense || null);
   const budget = budgetObj?.amount || 0;
   const daysLeft = getDaysLeftInMonth();
-  const dailyBudget = daysLeft > 0 ? Math.round((budget - totalSpent) / daysLeft) : 0;  
+  const dailyBudget = daysLeft > 0 ? Math.round((budget - totalSpent) / daysLeft) : 0;
 
   const biggestCategory = monthlySpending && monthlySpending.length > 0
     ? monthlySpending.reduce((max, curr) => curr.total > max.total ? curr : max, monthlySpending[0])
@@ -114,8 +116,8 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
               <LineChart data={spendingData}>
                 <defs>
                   <linearGradient id="dashboardSpendingGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#7C6EF7" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#7C6EF7" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#7C6EF7" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#7C6EF7" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis
@@ -159,7 +161,12 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
         </div>
 
         <div className="bg-surface rounded-xl p-6 border border-border shadow-sm">
-          <h3 className="text-lg font-medium mb-4">By category</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium">By category</h3>
+            <Link href={"/categories"} className='cursor-pointer hover:opacity-50'>
+              <ChevronRight />
+            </Link>
+          </div>
           {categoryData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={200}>
@@ -215,7 +222,7 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
         {transactionsWithCategory && transactionsWithCategory.length > 0 ? (
           <div className="space-y-1">
             {transactionsWithCategory.map((transaction) => {
-              
+
               const Icon = iconMap[transaction.categories?.icon];
               return (
                 <div

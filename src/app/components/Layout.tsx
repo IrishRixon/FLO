@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, Receipt, TrendingUp, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, Receipt, TrendingUp, LogOut, User, Tags } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -30,6 +30,7 @@ export function Layout({ children }: LayoutProps) {
   const urlExceptions = ['/login', '/signup'];
   const navLinks = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/categories', label: 'Categories', icon: Tags },
     { href: '/transactions', label: 'Transactions', icon: Receipt },
     { href: '/insights', label: 'Insights', icon: TrendingUp },
   ];

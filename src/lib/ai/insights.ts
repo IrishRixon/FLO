@@ -61,6 +61,7 @@ export function buildInsightPrompt(data: InsightPromptData): {
   system: string
   user: string
 } {
+
   const systemPrompt = `You are Flo, an AI financial assistant integrated into a personal finance tracker. Your role is to analyze the user's monthly spending data and provide clear, actionable, and personalized financial insights.
 
 ## Your Task
@@ -180,7 +181,7 @@ export async function generateInsightStream(
 
   try {
     const response = await deepseek.chat.completions.create({
-      model: "deepseek-chat",
+      model: "deepseek-v4-flash",
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
