@@ -5,6 +5,7 @@ import { Budget, MonthlySpending, TransactionWithCategory } from '@/types';
 import { iconMap } from '@/iconlist/icon-list';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { DashboardCard } from '@/app/components/dashboard-card';
 
 function formatDateLabel(dateStr: string): string {
   const date = new Date(dateStr);
@@ -80,15 +81,15 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-surface rounded-xl p-6 border border-border shadow-sm">
+        <DashboardCard>
           <p className="text-text-secondary text-sm mb-2">Spent this month</p>
           <p className="text-4xl font-medium mb-1" style={{ fontFamily: 'var(--font-mono)' }}>
             ₱{totalSpent.toLocaleString()}
           </p>
           <p className="text-text-secondary text-sm">of ₱{budget?.toLocaleString()} budget</p>
-        </div>
+        </DashboardCard>
 
-        <div className="bg-surface rounded-xl p-6 border border-border shadow-sm">
+        <DashboardCard>
           <p className="text-text-secondary text-sm mb-2">Biggest category</p>
           <div className="flex items-center gap-3 mb-1">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: biggestCategory?.category_color || '#6B7280' }}></div>
@@ -97,20 +98,19 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
           <p className="text-text-secondary text-sm" style={{ fontFamily: 'var(--font-mono)' }}>
             ₱{(biggestCategory?.total || 0).toLocaleString()}
           </p>
-        </div>
+        </DashboardCard>
 
-        <div className="bg-surface rounded-xl p-6 border border-border shadow-sm">
+        <DashboardCard>
           <p className="text-text-secondary text-sm mb-2">Days left</p>
           <p className="text-4xl font-medium mb-1" style={{ fontFamily: 'var(--font-mono)' }}>
             {daysLeft}
           </p>
           <p className="text-text-secondary text-sm">₱{dailyBudget} daily budget</p>
-        </div>
+        </DashboardCard>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="col-span-2 bg-surface rounded-xl p-6 border border-border shadow-sm">
-          <h3 className="text-lg font-medium mb-4">Spending over time</h3>
+        <DashboardCard title="Spending over time" className="col-span-2">
           {spendingData.length > 0 ? (
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={spendingData}>
@@ -158,15 +158,16 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
               No spending data for this month
             </div>
           )}
-        </div>
+        </DashboardCard>
 
-        <div className="bg-surface rounded-xl p-6 border border-border shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium">By category</h3>
+        <DashboardCard
+          title="By category"
+          action={
             <Link href={"/categories"} className='cursor-pointer hover:opacity-50'>
               <ChevronRight />
             </Link>
-          </div>
+          }
+        >
           {categoryData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={200}>
@@ -214,11 +215,10 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
               No category data
             </div>
           )}
-        </div>
+        </DashboardCard>
       </div>
 
-      <div className="bg-surface rounded-xl p-6 border border-border shadow-sm">
-        <h3 className="text-lg font-medium mb-4">Recent transactions</h3>
+      <DashboardCard title="Recent transactions">
         {transactionsWithCategory && transactionsWithCategory.length > 0 ? (
           <div className="space-y-1">
             {transactionsWithCategory.map((transaction) => {
@@ -257,7 +257,7 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
             No transactions this month
           </div>
         )}
-      </div>
+      </DashboardCard>
     </div>
   );
 }

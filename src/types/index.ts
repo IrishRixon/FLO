@@ -48,6 +48,10 @@ export interface TransactionWithCategory extends Transaction {
   categories: Category;
 }
 
+export interface CategoriesWithBudgetVsActual extends Category {
+  budgetVsActual: BudgetVsActual;
+}
+
 /** Row from `budgets` table */
 export interface Budget {
   id: string;
