@@ -1,7 +1,7 @@
 "use client";
 
 import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { Budget, MonthlySpending, TransactionWithCategory } from '@/types';
+import { Budget, MonthlyBudget, MonthlySpending, TransactionWithCategory } from '@/types';
 import { iconMap } from '@/iconlist/icon-list';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -48,16 +48,17 @@ function getSpendingData(transactions: TransactionWithCategory[] | null): { date
 }
 
 interface Props {
-  budgetObj: Budget | null;
+  budgetObj: MonthlyBudget | null;
   transactionsWithCategory: TransactionWithCategory[] | null;
   monthlySpending: MonthlySpending[] | null;
+  monthlyIncome: number;
 }
 
-export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory }: Props) {
+export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory, monthlyIncome }: Props) {
   const transactionsExpense = transactionsWithCategory?.filter((t) => t.type === "expense");
   const totalSpent = getTotalSpent(transactionsExpense || null);
   const spendingData = getSpendingData(transactionsExpense || null);
-  const budget = budgetObj?.amount || 0;
+  const budget = budgetObj?.budget || 0;
   const daysLeft = getDaysLeftInMonth();
   const dailyBudget = daysLeft > 0 ? Math.round((budget - totalSpent) / daysLeft) : 0;
 
@@ -80,13 +81,20 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
         <p className="text-text-secondary text-sm">Track your spending and stay on budget</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-4 gap-4 mb-6">
         <DashboardCard>
           <p className="text-text-secondary text-sm mb-2">Spent this month</p>
           <p className="text-4xl font-medium mb-1" style={{ fontFamily: 'var(--font-mono)' }}>
             ₱{totalSpent.toLocaleString()}
           </p>
           <p className="text-text-secondary text-sm">of ₱{budget?.toLocaleString()} budget</p>
+        </DashboardCard>
+
+        <DashboardCard>
+          <p className="text-text-secondary text-sm mb-2">Income</p>
+          <div className="flex items-center gap-3 mb-1">
+            <p className="text-4xl font-medium mb-1 text-[#4ECDC4]" style={{ fontFamily: 'var(--font-mono)' }}>₱{monthlyIncome.toLocaleString() || 'N/A'}</p>
+          </div>
         </DashboardCard>
 
         <DashboardCard>

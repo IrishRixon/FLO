@@ -27,6 +27,7 @@ export interface InsightPromptData {
     year: number
     daysInMonth: number
     daysElapsed: number
+    monthlySpendingLimit: number
   }
   currency: string
   income: {
@@ -71,7 +72,7 @@ Analyze the provided financial data for the given month and generate a comprehen
 You MUST respond with a valid JSON object (no markdown wrapping, no \`\`\`json blocks). The JSON must exactly match this TypeScript type:
 
 {
-  "summary": "A 2-3 sentence narrative summary of the user's financial month. Start with their name placeholder if available. Tone: encouraging but honest. Mention the total spent vs income or budget.",
+  "summary": "A 3-4 sentence narrative summary of the user's financial month. Start with their name placeholder if available. Tone: encouraging but honest. Mention the total spent vs income or budget. the spending limit should below the income amount so we stay in reality",
   "insights": [
     {
       "type": "warning" | "success" | "tip" | "neutral",
@@ -82,7 +83,7 @@ You MUST respond with a valid JSON object (no markdown wrapping, no \`\`\`json b
     }
   ],
   "savingsOpportunity": {
-    "amount": "A specific amount the user could save based on patterns found",
+    "amount": "A specific amount the user could save based on patterns found make sure it is a number only",
     "tip": "A specific, actionable saving tip based on their actual spending patterns"
   },
   "nextMonthForecast": "A 1-2 sentence prediction for next month based on current trajectory, with one specific recommendation"
@@ -135,6 +136,7 @@ When referencing specific categories in your insights, use the exact category na
 - Days in month: ${daysInMonth}
 - Days elapsed so far: ${daysElapsed}
 - Currency: ${data.currency}
+- Monthly Spending Limit: ${formatPeso(data.month.monthlySpendingLimit)}
 
 ## Income
 Total Income: ${formatPeso(data.income.total)}

@@ -14,6 +14,7 @@ export async function getAllCategories(): Promise<Category[]> {
     const { data: categories } = await supabase
       .from("categories")
       .select("*")
+      .neq('name', "Monthly_budget")
       .order("name", { ascending: true })
       .overrideTypes<Category[]>();
 
@@ -34,6 +35,7 @@ export async function getAllCategoriesWithBudgetVsActual(): Promise<CategoriesWi
     const { data: categories, error: categoriesError } = await supabase
       .from("categories")
       .select("*")
+      .neq('name', "Monthly_budget")
       .or(`user_id.eq.${user.id}, user_id.is.null`)
       .eq("type", "expense")
       .order("name")
