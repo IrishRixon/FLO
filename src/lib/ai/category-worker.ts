@@ -1,61 +1,151 @@
-import { pipeline, env } from '@xenova/transformers'
+import { pipeline } from '@xenova/transformers'
+import { matchKeyword } from './ph-keywords'
+import { getOrComputeCentroids } from './embedding-cache'
 
-// Allow model to be cached in browser
-env.allowLocalModels = false
-env.useBrowserCache = true
+/**
+ * Label engineering: descriptive phrases that help the embedding model
+ * better understand category semantics. These are NOT shown to the user.
+ * They are folded into the embedding computation via computeCategoryCentroid
+ * in embedding-cache.ts, which already uses category-examples.ts.
+ */
 
-let classifier: any = null
+/**
+ * Input enrichment: prepend context to the user's raw description
+ * so the embedding model gets more signal from short input.
+ */
+const ENRICHMENT_PREFIX = 'Transaction: '
+
+let extractor: any = null
+let centroids: Record<string, number[]> = {}
+let categoryNames: string[] = []
+
+/**
+ * Embed a single text string into a normalized vector using the model.
+ */
+async function embedText(text: string): Promise<number[]> {
+  if (!extractor) {
+    throw new Error('Model not loaded')
+  }
+
+  const output = await extractor(text, {
+    pooling: 'mean',
+    normalize: true,
+  })
+
+  // Extract the embedding array from the output tensor
+  const embedding: number[] = Array.from(output.data)
+  return embedding
+}
+
+/**
+ * Cosine similarity between two L2-normalized vectors (simple dot product).
+ */
+function cosineSimilarity(a: number[], b: number[]): number {
+  let sum = 0
+  for (let i = 0; i < a.length; i++) {
+    sum += a[i] * b[i]
+  }
+  return sum
+}
 
 self.onmessage = async (event: MessageEvent) => {
-  const { type, text, categoryLabels, typeLabels } = event.data
+  const { type } = event.data
 
-  if (type === 'classify') {
+  if (type === 'init') {
     try {
-      // Load model if not already loaded
-      if (!classifier) {
-        self.postMessage({ type: 'loading' })
-        classifier = await pipeline('zero-shot-classification', 'Xenova/mobilebert-uncased-mnli')
+      const { categories } = event.data
+
+      if (!categories || categories.length === 0) {
+        self.postMessage({ type: 'error', message: 'No categories provided' })
+        return
       }
 
-      // Combine both category and type labels into a single inference
-      const allLabels = [...categoryLabels, ...typeLabels]
-      const result = await classifier(text, allLabels, { multi_label: false })
+      // Load model
+      self.postMessage({ type: 'loading' })
+      extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2')
 
-      // Find the best category label (only among categoryLabels)
-      let bestCategoryLabel: string | null = null
-      let bestCategoryScore = 0
-      let bestTypeLabel: string | null = null
-      let bestTypeScore = 0
+      // Get or compute centroids (will use IndexedDB cache if available)
+      centroids = await getOrComputeCentroids(categories, embedText)
+      categoryNames = Object.keys(centroids)
 
-      for (let i = 0; i < result.labels.length; i++) {
-        const label = result.labels[i]
-        const score = result.scores[i]
+      self.postMessage({ type: 'ready' })
+    } catch (error) {
+      self.postMessage({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Worker init failed',
+      })
+    }
+  } else if (type === 'classify') {
+    try {
+      const { text } = event.data
 
-        if (categoryLabels.includes(label)) {
-          if (score > bestCategoryScore) {
-            bestCategoryScore = score
-            bestCategoryLabel = label
-          }
-        }
+      if (!text || typeof text !== 'string') {
+        self.postMessage({ type: 'error', message: 'Invalid text' })
+        return
+      }
 
-        if (typeLabels.includes(label)) {
-          if (score > bestTypeScore) {
-            bestTypeScore = score
-            bestTypeLabel = label
-          }
+      // ── Step 1: Keyword check (instant, no AI) ──
+      const keywordMatch = matchKeyword(text)
+      if (keywordMatch) {
+        self.postMessage({
+          type: 'result',
+          label: keywordMatch,
+          score: 1.0,
+          source: 'keyword',
+          margin: 1.0,
+        })
+        return
+      }
+
+      // ── Step 2: Embedding similarity ──
+      if (!extractor || categoryNames.length === 0) {
+        self.postMessage({
+          type: 'error',
+          message: 'Worker not initialized',
+        })
+        return
+      }
+
+      // Enrich input: add context prefix to help short descriptions
+      const enrichedText = `${ENRICHMENT_PREFIX}${text}`
+      const embedding = await embedText(enrichedText)
+
+      // Compute similarity against every category centroid
+      const similarities: Array<{ name: string; score: number }> = []
+      for (const name of categoryNames) {
+        const centroid = centroids[name]
+        if (centroid) {
+          similarities.push({
+            name,
+            score: cosineSimilarity(embedding, centroid),
+          })
         }
       }
+
+      // Sort descending by score
+      similarities.sort((a, b) => b.score - a.score)
+
+      if (similarities.length === 0) {
+        self.postMessage({
+          type: 'result',
+          label: null,
+          score: 0,
+          source: 'embedding',
+          margin: 0,
+        })
+        return
+      }
+
+      const top = similarities[0]
+      const second = similarities[1]
+      const margin = second ? top.score - second.score : 1.0
 
       self.postMessage({
         type: 'result',
-        category: {
-          label: bestCategoryLabel,
-          score: bestCategoryScore,
-        },
-        typeResult: {
-          label: bestTypeLabel,
-          score: bestTypeScore,
-        },
+        label: top.name,
+        score: top.score,
+        source: 'embedding',
+        margin,
       })
     } catch (error) {
       self.postMessage({

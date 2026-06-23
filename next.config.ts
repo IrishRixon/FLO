@@ -5,21 +5,14 @@ const nextConfig: NextConfig = {
     remotePatterns: [],
   },
 
-  // Silences TurboPack warning — using webpack for WASM support
+  // Silences TurboPack warning
   turbopack: {},
 
-  // Required for Transformers.js WebAssembly
+  // Webpack config for Transformers.js
   webpack: (config: any) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
-    };
-
-    // Enable async WebAssembly
-    config.experiments = {
-      ...config.experiments,
-      asyncWebAssembly: true,
-      layers: true,
     };
 
     return config;

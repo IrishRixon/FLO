@@ -24,6 +24,7 @@ export interface Category {
   icon: string;
   color: string;
   is_default: boolean;
+  type: TransactionType;
   created_at: string;
 }
 

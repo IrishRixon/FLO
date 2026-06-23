@@ -35,6 +35,7 @@ export async function getAllCategoriesWithBudgetVsActual(): Promise<CategoriesWi
       .from("categories")
       .select("*")
       .or(`user_id.eq.${user.id}, user_id.is.null`)
+      .eq("type", "expense")
       .order("name")
       .overrideTypes<Category[]>();
 
