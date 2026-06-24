@@ -242,8 +242,8 @@ export async function getPreviousMonthSpending(
     const prevDate = new Date(prevMonthStr + "T00:00:00");
     const year = prevDate.getFullYear();
     const month = prevDate.getMonth();
-    const startOfPrev = new Date(year, month, 1).toISOString().split("T")[0];
-    const startOfNext = new Date(year, month + 1, 1).toISOString().split("T")[0];
+    const startOfPrev = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    const startOfNext = `${year}-${String(month + 2).padStart(2, "0")}-01`;
 
     const { data, error } = await supabase
       .from("monthly_spending")

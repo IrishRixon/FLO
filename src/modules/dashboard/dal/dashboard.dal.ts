@@ -8,8 +8,8 @@ export async function constraints() {
     const now = new Date()
     const year = now.getFullYear()
     const month = now.getMonth()
-    const startOfMonth = new Date(year, month, 1).toISOString().split('T')[0]
-    const startOfNextMonth = new Date(year, month + 1, 1).toISOString().split('T')[0]
+    const startOfMonth = `${year}-${String(month + 1).padStart(2, "0")}-01`
+    const startOfNextMonth = `${year}-${String(month + 2).padStart(2, "0")}-01`
 
     return {
         supabase,

@@ -137,7 +137,7 @@ export function TransactionFAB({ onSuccess }: TransactionFABProps) {
         ai_category_suggestion: suggestedCategory?.name ?? null,
         ai_confidence: confidence > 0 ? confidence : null,
       };
-
+      
       const res = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

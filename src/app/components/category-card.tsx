@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Progress } from "@/app/components/ui/progress";
 import { iconMap } from "@/iconlist/icon-list";
 import { CategoriesWithBudgetVsActual } from "@/types";
 import { Pencil, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import { EditBudgetDialog } from "@/app/components/edit-budget-dialog";
 
 function getStatus(spent: number, budget: number): "ok" | "warning" | "over" {
   if (budget === 0) return "ok";
@@ -20,10 +22,10 @@ function formatMoney(amount: number): string {
 
 interface CategoryCardProps {
   category: CategoriesWithBudgetVsActual;
-  onEdit: (category: CategoriesWithBudgetVsActual) => void;
 }
 
-export function CategoryCard({ category, onEdit }: CategoryCardProps) {
+export function CategoryCard({ category }: CategoryCardProps) {
+  const [editCategory, setEditCategory] = useState<CategoriesWithBudgetVsActual | null>(null);
   const Icon = iconMap[category.icon];
   const status = getStatus(category.budgetVsActual.spent_amount, category.budgetVsActual.budget_amount);
   const pct = Math.min((category.budgetVsActual.spent_amount / category.budgetVsActual.budget_amount) * 100, 100);
@@ -56,7 +58,7 @@ export function CategoryCard({ category, onEdit }: CategoryCardProps) {
           </div>
 
           <button
-            onClick={() => onEdit(category)}
+            onClick={() => setEditCategory(category)}
             className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-all"
             aria-label={`Edit budget for ${category.name}`}
           >
@@ -124,6 +126,12 @@ export function CategoryCard({ category, onEdit }: CategoryCardProps) {
           </div>
         </div>
       </CardContent>
+
+      <EditBudgetDialog
+        category={editCategory}
+        open={editCategory !== null}
+        onClose={() => setEditCategory(null)}
+      />
     </Card>
   );
 }
