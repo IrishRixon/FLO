@@ -1,7 +1,7 @@
 "use client";
 
 import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { Budget, MonthlyBudget, MonthlySpending, TransactionWithCategory } from '@/types';
+import { Budget, CategoriesWithBudgetVsActual, MonthlyBudget, MonthlySpending, TransactionWithCategory } from '@/types';
 import { iconMap } from '@/iconlist/icon-list';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -48,19 +48,20 @@ function getSpendingData(transactions: TransactionWithCategory[] | null): { date
 }
 
 interface Props {
-  budgetObj: MonthlyBudget | null;
   transactionsWithCategory: TransactionWithCategory[] | null;
   monthlySpending: MonthlySpending[] | null;
+  categoriesWithBudgetActual: CategoriesWithBudgetVsActual[];
   monthlyIncome: number;
 }
 
-export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory, monthlyIncome }: Props) {
+export function Dashboard({ monthlySpending, transactionsWithCategory, categoriesWithBudgetActual, monthlyIncome }: Props) {
   const transactionsExpense = transactionsWithCategory?.filter((t) => t.type === "expense");
   const totalSpent = getTotalSpent(transactionsExpense || null);
   const spendingData = getSpendingData(transactionsExpense || null);
-  const budget = budgetObj?.budget || 0;
+  const budget = categoriesWithBudgetActual.reduce((acc, category) => acc + category.budgetVsActual.budget_amount, 0);
   const daysLeft = getDaysLeftInMonth();
   const dailyBudget = daysLeft > 0 ? Math.round((budget - totalSpent) / daysLeft) : 0;
+  const isSpentOverBudgetThisMonth = totalSpent > budget;
 
   const biggestCategory = monthlySpending && monthlySpending.length > 0
     ? monthlySpending.reduce((max, curr) => curr.total > max.total ? curr : max, monthlySpending[0])
@@ -84,7 +85,7 @@ export function Dashboard({ budgetObj, monthlySpending, transactionsWithCategory
       <div className="grid grid-cols-4 gap-4 mb-6">
         <DashboardCard>
           <p className="text-text-secondary text-sm mb-2">Spent this month</p>
-          <p className="text-4xl font-medium mb-1" style={{ fontFamily: 'var(--font-mono)' }}>
+          <p className={`text-4xl font-medium mb-1 ${isSpentOverBudgetThisMonth ? 'text-destructive/70' : ''}`} style={{ fontFamily: 'var(--font-mono)' }}>
             ₱{totalSpent.toLocaleString()}
           </p>
           <p className="text-text-secondary text-sm">of ₱{budget?.toLocaleString()} budget</p>

@@ -19,22 +19,6 @@ export async function constraints() {
     }
 }
 
-export async function getMonthlyBudgets(): Promise<MonthlyBudget | null> {
-    try {
-        const { startOfMonth, startOfNextMonth, supabase, user } = await constraints();
-
-        const { data: budgets, error } = await supabase
-            .from('monthly_budget')
-            .select(`budget`)
-            .eq('user_id', user?.id)
-            .single<MonthlyBudget>()
-        return budgets ?? null;
-    } catch (error) {
-        console.error(`error: ${error}`);
-        return null;
-    }
-}
-
 export async function getTransactions(): Promise<TransactionWithCategory[] | null> {
     try {
         const { startOfMonth, startOfNextMonth, supabase, user } = await constraints();

@@ -67,11 +67,21 @@ export function GenerateButton({ month, onInsightGenerated }: GenerateButtonProp
       clearTimeout(stageTimer2);
 
       // Parse the full JSON response
-      const data = JSON.parse(fullResponse) as InsightData;
+      let data: InsightData;
+      try {
+        data = JSON.parse(fullResponse) as InsightData;
 
-      // Basic validation
-      if (!data.summary || !Array.isArray(data.insights)) {
-        throw new Error("Invalid insight format");
+        // Basic validation
+        if (!data.summary || !Array.isArray(data.insights)) {
+          throw new Error("Invalid insight format");
+        }
+      } catch (parseErr) {
+        // Log the raw response for debugging (truncated)
+        console.error("Failed to parse insight JSON. Raw response:", fullResponse.slice(0, 500));
+        throw new Error(
+          "The AI generated an incomplete or malformed response. " +
+          "Please try again — sometimes the AI needs a second attempt to get the format right."
+        );
       }
 
       onInsightGenerated(data);

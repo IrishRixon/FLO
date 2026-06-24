@@ -5,66 +5,76 @@ import { DashboardCard } from "@/app/components/dashboard-card";
 import { CategoriesWithBudgetVsActual, Category } from "@/types";
 
 interface Props {
-    categories: CategoriesWithBudgetVsActual[];
+  categories: CategoriesWithBudgetVsActual[];
 }
 
 export function CategoriesPage({ categories }: Props) {
-    return (
-        <div className="p-8">
-            <div className="mb-8">
-                <h2 className="text-2xl font-medium mb-1" style={{ fontFamily: 'var(--font-display)' }}>Categories</h2>
-                <p className="text-text-secondary text-sm">Track and set budget in each categories</p>
-            </div>
+  const totalBudget = categories.reduce((acc, category) => acc + category.budgetVsActual.budget_amount, 0);
+  const totalSpent = categories.reduce((acc, category) => acc + category.budgetVsActual.spent_amount, 0);
+  const overBudget = categories.filter((category) => category.budgetVsActual.spent_amount > category.budgetVsActual.budget_amount).length;
+  const onTrack = categories.filter((category) => category.budgetVsActual.spent_amount <= category.budgetVsActual.budget_amount && category.budgetVsActual.budget_amount > 0).length;
+  const percentage = Math.round((totalSpent / totalBudget) * 100);
 
-            <div className="grid grid-cols-4 gap-4 mb-8">
+  return (
+    <div className="p-8">
+      <div className="mb-8">
+        <h2 className="text-2xl font-medium mb-1" style={{ fontFamily: 'var(--font-display)' }}>Categories</h2>
+        <p className="text-text-secondary text-sm">Track and set budget in each categories</p>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4 mb-8">
         {[
           {
             label: "Total Budget",
-            value: 4,
+            value: totalBudget,
             sub: "this month",
             color: "var(--primary)",
           },
           {
             label: "Total Spent",
-            value: 4,
-            sub: "this month",
-            color: "#FF6B6B",
+            value: totalSpent,
+            sub: `${percentage}% of budget`,
+            color: "#4ADE80",
           },
           {
             label: "Over Budget",
-            value: 0,
-            sub: "all clear",
-            color: "#4ADE80",
+            value: overBudget,
+            sub: `of ${categories.length} categories`,
+            color: "#FF6B6B",
           },
           {
             label: "On Track",
-            value: 1,
+            value: onTrack,
             sub: `of ${categories.length} categories`,
             color: "#4ADE80",
           },
-        ].map((stat) => (
-          <DashboardCard
-            key={stat.label}
-            className="bg-surface border border-border rounded-2xl"
-          >
-            <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">
-              {stat.label}
-            </p>
-            <p
-              className="text-xl font-semibold mb-0.5"
-              style={{ fontFamily: "var(--font-mono)", color: stat.color }}
+        ].map((stat) => {
+          const isLabelSpend = stat.label.toLowerCase() === "total spent";
+          const overSpent = isLabelSpend ? totalSpent > totalBudget : false;
+          return (
+            <DashboardCard
+              key={stat.label}
+              className={`${overSpent ? "bg-destructive/10" : "bg-surface"} border ${overSpent ? "border-destructive/20" : "border-border"} rounded-2xl `}
             >
-              {stat.value}
-            </p>
-            <p className="text-xs text-muted-foreground">{stat.sub}</p>
-          </DashboardCard>
+              <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">
+                {stat.label}
+              </p>
+              <p
+                className="text-xl font-semibold mb-0.5"
+                style={{ fontFamily: "var(--font-mono)", color: stat.color }}
+              >
+                {stat.value}
+              </p>
+              <p className="text-xs text-muted-foreground">{stat.sub}</p>
+            </DashboardCard>
+          )
+        })}
+      </div>
+      <div className="grid grid-cols-4 gap-4">
+        {categories.map((category) => (
+          <CategoryCard key={category.id} category={category} />
         ))}
       </div>
-            <div className="grid grid-cols-4 gap-4">
-                {categories.map((category) => (
-                    <CategoryCard key={category.id} category={category} />
-                ))}
-            </div>
-        </div>
-    )
+    </div>
+  )
 }

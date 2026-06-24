@@ -70,7 +70,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
         <div className="mb-3">
           <Progress
             value={pct}
-            className="h-1.5 [&>[data-slot=progress-indicator]]:bg-muted-foreground/30"
+            className={`h-1.5 [&>[data-slot=progress-indicator]]:bg-muted-foreground/30 ${status === "over" ? "[&>[data-slot=progress-indicator]]:bg-destructive" : status === "warning" ? "[&>[data-slot=progress-indicator]]:bg-[#FFB84D]" : "[&>[data-slot=progress-indicator]]:bg-primary"}`}
           />
         </div>
 

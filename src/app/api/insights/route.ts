@@ -47,8 +47,13 @@ export async function POST(request: NextRequest) {
       const now = new Date();
       const hoursDiff = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
       if (hoursDiff < 24) {
-        const parsed = JSON.parse(cached.content);
-        return NextResponse.json(parsed);
+        try {
+          const parsed = parseInsightResponse(cached.content);
+          return NextResponse.json(parsed);
+        } catch {
+          // Cached insight is corrupt, delete it and regenerate
+          console.warn("Corrupt cached insight, regenerating...");
+        }
       }
     }
 
