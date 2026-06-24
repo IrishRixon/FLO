@@ -30,8 +30,10 @@ export async function PATCH(request: Request) {
     }
 
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split("T")[0];
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const startOfMonth = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    const startOfNextMonth = `${year}-${String(month + 2).padStart(2, "0")}-01`;
 
     // Fetch existing budget for this month
     const { data: existingBudget, error: fetchError } = await supabase

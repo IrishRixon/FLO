@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
+import { getCategoryByName } from '@/lib/utils/category-mapped-name';
 
 const fabFormSchema = z.object({
   type: z.enum(['expense', 'income']),
@@ -75,12 +76,13 @@ export function TransactionFAB({ onSuccess }: TransactionFABProps) {
 
   const description = form.watch('description');
   const selectedType = form.watch('type');
+  const selectedCategory = form.watch('category');
 
   // Fetch categories from API on mount
   useEffect(() => {
     async function loadCategories() {
       try {
-        const res = await fetch('/api/categories');
+        const res = await fetch(`/api/categories?type=${selectedType}`);
         if (!res.ok) throw new Error('Failed to fetch categories');
         const data: Category[] = await res.json();
         setCategories(data);
@@ -97,16 +99,14 @@ export function TransactionFAB({ onSuccess }: TransactionFABProps) {
     suggestion: suggestedCategory,
     confidence,
     confidencePercent,
-    suggestedType,
-    typeConfidence,
-    typeConfidencePercent,
     isModelLoading,
     isClassifying,
+    canAskAI,
   } = useAICategory(description, categories, {
     debounceMs: 600,
-    minLength: 4,
-    confidenceThreshold: 0.35,
-    typeConfidenceThreshold: 0.30,
+    minLength: 3,
+    minScore: 0.42,
+    minMargin: 0.04,
   });
 
   // Auto-fill category when suggestion arrives
@@ -115,13 +115,6 @@ export function TransactionFAB({ onSuccess }: TransactionFABProps) {
       form.setValue('category', suggestedCategory.name);
     }
   }, [suggestedCategory, form]);
-
-  // Auto-fill type when AI suggests expense/income
-  useEffect(() => {
-    if (suggestedType) {
-      typeOnChangeRef.current(suggestedType);
-    }
-  }, [suggestedType]);
 
   const handleSave = async (data: FabFormValues) => {
     setIsSaving(true);
@@ -144,7 +137,7 @@ export function TransactionFAB({ onSuccess }: TransactionFABProps) {
         ai_category_suggestion: suggestedCategory?.name ?? null,
         ai_confidence: confidence > 0 ? confidence : null,
       };
-
+      
       const res = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -211,45 +204,6 @@ export function TransactionFAB({ onSuccess }: TransactionFABProps) {
 
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => {
-                      typeOnChangeRef.current = field.onChange;
-                      return (
-                        <FormItem>
-                          <FormLabel className="text-sm text-text-secondary">
-                            Type
-                          </FormLabel>
-                          <FormControl>
-                            <Select
-                              value={field.value}
-                              onValueChange={field.onChange}
-                            >
-                              <SelectTrigger className="bg-background border-border h-12">
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="expense">
-                                  <span className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-[#FF6B6B]" />
-                                    Expense
-                                  </span>
-                                </SelectItem>
-                                <SelectItem value="income">
-                                  <span className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-[#4ECDC4]" />
-                                    Income
-                                  </span>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
 
                   <FormField
                     control={form.control}
@@ -333,6 +287,48 @@ export function TransactionFAB({ onSuccess }: TransactionFABProps) {
                         </AnimatePresence>
                       </FormItem>
                     )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => {
+                      typeOnChangeRef.current = field.onChange;
+                      return (
+                        <FormItem>
+                          <FormLabel className="text-sm text-text-secondary">
+                            Type
+                          </FormLabel>
+                          <FormControl>
+                            <Select
+                              value={getCategoryByName(selectedCategory, categories)?.type || field.value}
+                              onValueChange={field.onChange}
+                              disabled={true}
+
+                            >
+                              <SelectTrigger className="bg-background border-border h-12">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="expense">
+                                  <span className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-[#FF6B6B]" />
+                                    Expense
+                                  </span>
+                                </SelectItem>
+                                <SelectItem value="income">
+                                  <span className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-[#4ECDC4]" />
+                                    Income
+                                  </span>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
 
                   <FormField

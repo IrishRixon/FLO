@@ -24,6 +24,7 @@ export interface Category {
   icon: string;
   color: string;
   is_default: boolean;
+  type: TransactionType;
   created_at: string;
 }
 
@@ -62,6 +63,14 @@ export interface Budget {
   created_at: string;
   updated_at: string;
 }
+
+ export interface MonthlyBudget {
+    id: string;
+    user_id: string;
+    budget: number;
+    updated_at: string;
+    created_at: string;
+ }
 
 /** Budget joined with its category (for display) */
 export interface BudgetWithCategory extends Budget {

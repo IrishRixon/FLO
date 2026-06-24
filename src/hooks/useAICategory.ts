@@ -1,25 +1,26 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Category, TransactionType } from '@/types'
+import { Category } from '@/types'
 
 interface UseAICategoryOptions {
   debounceMs?: number
   minLength?: number
-  confidenceThreshold?: number
-  typeConfidenceThreshold?: number
+  /** Minimum cosine similarity score to accept a suggestion */
+  minScore?: number
+  /** Minimum margin between top and second-best score */
+  minMargin?: number
 }
 
 interface UseAICategoryReturn {
   suggestion: Category | null
   confidence: number
-  suggestedType: TransactionType | null
-  typeConfidence: number
   confidencePercent: string
-  typeConfidencePercent: string
   isModelLoading: boolean
   isClassifying: boolean
   isReady: boolean
+  /** True when classification ran but wasn't confident enough */
+  canAskAI: boolean
 }
 
 export function useAICategory(
@@ -30,17 +31,16 @@ export function useAICategory(
   const {
     debounceMs = 600,
     minLength = 4,
-    confidenceThreshold = 0.10,
-    typeConfidenceThreshold = 0.25,
+    minScore = 0.42,
+    minMargin = 0.04,
   } = options
 
   const [suggestion, setSuggestion] = useState<Category | null>(null)
   const [confidence, setConfidence] = useState(0)
-  const [suggestedType, setSuggestedType] = useState<TransactionType | null>(null)
-  const [typeConfidence, setTypeConfidence] = useState(0)
   const [isModelLoading, setIsModelLoading] = useState(false)
   const [isClassifying, setIsClassifying] = useState(false)
   const [isReady, setIsReady] = useState(false)
+  const [canAskAI, setCanAskAI] = useState(false)
 
   const workerRef = useRef<Worker | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -49,6 +49,9 @@ export function useAICategory(
   const categoriesRef = useRef<Category[]>(categories)
   categoriesRef.current = categories
 
+  // Track whether init has been sent (so we don't re-send on categories change)
+  const initSentRef = useRef(false)
+
   // Create worker once on mount, terminate on unmount
   useEffect(() => {
     workerRef.current = new Worker(
@@ -56,46 +59,49 @@ export function useAICategory(
     )
 
     workerRef.current.onmessage = (event) => {
-      const { type, category, typeResult, message } = event.data
-      
+      const { type, label, score, source, margin, message } = event.data
+
       if (type === 'loading') {
         setIsModelLoading(true)
         setIsClassifying(false)
+      } else if (type === 'ready') {
+        setIsModelLoading(false)
+        setIsReady(true)
       } else if (type === 'result') {
         setIsModelLoading(false)
         setIsClassifying(false)
         setIsReady(true)
+        setCanAskAI(false)
 
-        // Handle category classification
-        if (category?.label) {
-          const matchedCategory = categoriesRef.current.find(
-            (c) => c.name.toLowerCase() === category.label.toLowerCase()
-          ) ?? null
-
-          if (category.score >= confidenceThreshold) {
-            setSuggestion(matchedCategory)
-            setConfidence(category.score)
-          } else {
-            setSuggestion(null)
-            setConfidence(0)
-          }
+        if (!label) {
+          // No label returned (e.g., no centroids)
+          setSuggestion(null)
+          setConfidence(0)
+          return
         }
 
-        // Handle type classification (expense / income)
-        if (typeResult?.label) {
-          const normalizedType = typeResult.label.toLowerCase() as TransactionType
-          if (normalizedType === 'expense' || normalizedType === 'income') {
-            if (typeResult.score >= typeConfidenceThreshold) {
-              setSuggestedType(normalizedType)
-              setTypeConfidence(typeResult.score)
-            } else {
-              setSuggestedType(null)
-              setTypeConfidence(0)
-            }
+        const matchedCategory = categoriesRef.current.find(
+          (c) => c.name.toLowerCase() === (label as string).toLowerCase()
+        ) ?? null
+
+        if (source === 'keyword') {
+          // Keyword matches are always accepted (score is 1.0)
+          setSuggestion(matchedCategory)
+          setConfidence(score as number)
+        } else if (source === 'embedding') {
+          // Apply confidence thresholds
+          const rawScore = score as number
+          const rawMargin = margin as number
+
+          if (rawScore >= minScore && rawMargin >= minMargin) {
+            setSuggestion(matchedCategory)
+            setConfidence(rawScore)
+          } else {
+            // Not confident enough — show no suggestion
+            setSuggestion(null)
+            setConfidence(0)
+            setCanAskAI(true) // Offer cloud fallback
           }
-        } else {
-          setSuggestedType(null)
-          setTypeConfidence(0)
         }
       } else if (type === 'error') {
         console.error('AI Classification error:', message)
@@ -112,6 +118,17 @@ export function useAICategory(
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Send init to worker when categories are loaded
+  useEffect(() => {
+    if (workerRef.current && categories.length > 0 && !initSentRef.current) {
+      initSentRef.current = true
+      workerRef.current.postMessage({
+        type: 'init',
+        categories,
+      })
+    }
+  }, [categories])
+
   // Debounce and classify when description changes
   useEffect(() => {
     if (debounceRef.current) {
@@ -121,20 +138,18 @@ export function useAICategory(
     if (!description || description.length < minLength) {
       setSuggestion(null)
       setConfidence(0)
-      setSuggestedType(null)
-      setTypeConfidence(0)
       setIsClassifying(false)
+      setCanAskAI(false)
       return
     }
 
     debounceRef.current = setTimeout(() => {
       if (workerRef.current && categories.length > 0) {
         setIsClassifying(true)
+        setCanAskAI(false)
         workerRef.current.postMessage({
           type: 'classify',
           text: description,
-          categoryLabels: categories.map((c) => c.name),
-          typeLabels: ['expense', 'income'],
         })
       }
     }, debounceMs)
@@ -147,17 +162,14 @@ export function useAICategory(
   }, [description, categories, debounceMs, minLength])
 
   const confidencePercent = `${Math.round(confidence * 100)}%`
-  const typeConfidencePercent = `${Math.round(typeConfidence * 100)}%`
 
   return {
     suggestion,
     confidence,
-    suggestedType,
-    typeConfidence,
     confidencePercent,
-    typeConfidencePercent,
     isModelLoading,
     isClassifying,
     isReady,
+    canAskAI,
   }
 }

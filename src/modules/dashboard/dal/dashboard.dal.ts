@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Budget, MonthlySpending, Transaction, TransactionType, TransactionWithCategory } from "@/types";
+import { Budget, MonthlyBudget, MonthlySpending, Transaction, TransactionType, TransactionWithCategory } from "@/types";
 
 export async function constraints() {
     const supabase = await createClient()
@@ -8,8 +8,8 @@ export async function constraints() {
     const now = new Date()
     const year = now.getFullYear()
     const month = now.getMonth()
-    const startOfMonth = new Date(year, month, 1).toISOString().split('T')[0]
-    const startOfNextMonth = new Date(year, month + 1, 1).toISOString().split('T')[0]
+    const startOfMonth = `${year}-${String(month + 1).padStart(2, "0")}-01`
+    const startOfNextMonth = `${year}-${String(month + 2).padStart(2, "0")}-01`
 
     return {
         supabase,
@@ -19,17 +19,15 @@ export async function constraints() {
     }
 }
 
-export async function getBudgets(): Promise<Budget | null> {
+export async function getMonthlyBudgets(): Promise<MonthlyBudget | null> {
     try {
         const { startOfMonth, startOfNextMonth, supabase, user } = await constraints();
-        
+
         const { data: budgets, error } = await supabase
-            .from('budgets')
-            .select(`amount`)
-            .eq('user_id', user?.id) 
-            .gte('month', startOfMonth)
-            .lt('month', startOfNextMonth)
-            .single<Budget>()
+            .from('monthly_budget')
+            .select(`budget`)
+            .eq('user_id', user?.id)
+            .single<MonthlyBudget>()
         return budgets ?? null;
     } catch (error) {
         console.error(`error: ${error}`);

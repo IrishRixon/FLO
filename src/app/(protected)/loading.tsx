@@ -1,6 +1,9 @@
+import { Loader2 } from "lucide-react";
 
-export default async function Loading() {
+export default function Loading() {
     return (
-        <h1 className="text-white">Loading...</h1>
+        <div className="flex items-center justify-center h-screen">
+            <Loader2 size={54} className="animate-spin text-primary" />
+        </div>
     )
 }
