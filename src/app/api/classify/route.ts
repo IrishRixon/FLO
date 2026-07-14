@@ -3,10 +3,21 @@ import { createClient } from '@/lib/supabase/server';
 import OpenAI from 'openai';
 
 // Initialize DeepSeek via OpenAI-compatible endpoint
-const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY ?? '',
-  baseURL: 'https://api.deepseek.com/v1',
-});
+let deepseekClient: OpenAI | null = null;
+
+function getDeepSeekClient(): OpenAI {
+  if (!deepseekClient) {
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    if (!apiKey) {
+      throw new Error('DEEPSEEK_API_KEY is not defined');
+    }
+    deepseekClient = new OpenAI({
+      baseURL: 'https://api.deepseek.com/v1',
+      apiKey,
+    });
+  }
+  return deepseekClient;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call DeepSeek with a short, cheap prompt
-    const completion = await deepseek.chat.completions.create({
+    const completion = await getDeepSeekClient().chat.completions.create({
       model: 'deepseek-chat',
       messages: [
         {
@@ -48,7 +59,7 @@ export async function POST(request: NextRequest) {
       max_tokens: 20, // one-word answer, keep cost minimal
     });
 
-    const category = completion.choices[0]?.message?.content?.trim() ?? null;
+    const category = completion?.choices[0]?.message?.content?.trim() ?? null;
 
     // Validate that the response is actually one of the provided categories
     const validCategory = category && categories.includes(category)

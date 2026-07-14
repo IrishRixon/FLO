@@ -1,6 +1,8 @@
 import { requireAuth } from '@/lib/auth/guard';
 import { TransactionFAB } from '@/app/components/TransactionFAB';
 
+export const dynamic = 'force-dynamic';
+
 interface ProtectedLayoutProps {
   children: React.ReactNode;
 }

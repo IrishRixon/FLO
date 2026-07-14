@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = 'force-dynamic';
 import { createClient } from "@/lib/supabase/server";
 import {
   getInsightForMonth,
@@ -16,7 +18,6 @@ import {
 } from "@/lib/ai/insights";
 import { saveInsight } from "@/lib/supabase/queries/insights";
 import { format } from "date-fns";
-import { getMonthlyBudgets } from "@/modules/dashboard/dal/dashboard.dal";
 
 export async function POST(request: NextRequest) {
   try {
@@ -80,14 +81,13 @@ export async function POST(request: NextRequest) {
     const prevMonthStr = format(prevMonthDate, "yyyy-MM-01");
 
     // Gather all data in parallel
-    const [spendingData, budgetData, incomeData, topTransactions, prevMonthSpending, monthlyBudget] =
+    const [spendingData, budgetData, incomeData, topTransactions, prevMonthSpending] =
       await Promise.all([
         getSpendingDataForMonth(user.id, month),
         getBudgetVsActualForMonth(user.id, month),
         getIncomeForMonth(user.id, startDate, endDate),
         getTopTransactionsForMonth(user.id, startDate, endDate),
         getPreviousMonthSpending(user.id, prevMonthStr),
-        getMonthlyBudgets()
       ]);
 
     // Build category spend with budget info
@@ -106,7 +106,6 @@ export async function POST(request: NextRequest) {
 
     const totalSpent = spendingData.reduce((sum: number, s: { total: number }) => sum + s.total, 0);
     const totalBudget = budgetData.reduce((sum: number, b: { budget_amount: number }) => sum + b.budget_amount, 0);
-    const getMonthlyBudget = monthlyBudget?.budget;
 
     const promptData = {
       month: {
@@ -114,7 +113,7 @@ export async function POST(request: NextRequest) {
         year,
         daysInMonth,
         daysElapsed,
-        monthlySpendingLimit: getMonthlyBudget || 0
+        monthlySpendingLimit: 0
       },
       currency: "PHP",
       income: incomeData,

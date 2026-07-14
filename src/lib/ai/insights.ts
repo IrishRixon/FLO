@@ -1,10 +1,21 @@
 import OpenAI from "openai";
 import type { InsightData, SavingsOpportunity, Insight } from "@/types/insights";
 
-const deepseek = new OpenAI({
-  baseURL: "https://api.deepseek.com",
-  apiKey: process.env.DEEPSEEK_API_KEY,
-});
+let deepseekClient: OpenAI | null = null;
+
+function getDeepSeekClient(): OpenAI {
+  if (!deepseekClient) {
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    if (!apiKey) {
+      throw new Error("DEEPSEEK_API_KEY environment variable is missing or empty");
+    }
+    deepseekClient = new OpenAI({
+      baseURL: "https://api.deepseek.com",
+      apiKey,
+    });
+  }
+  return deepseekClient;
+}
 
 export interface CategorySpend {
   name: string
@@ -191,7 +202,7 @@ export async function generateInsightStream(
   const { system, user } = buildInsightPrompt(promptData);
 
   try {
-    const response = await deepseek.chat.completions.create({
+    const response = await getDeepSeekClient().chat.completions.create({
       model: "deepseek-v4-flash",
       messages: [
         { role: "system", content: system },
