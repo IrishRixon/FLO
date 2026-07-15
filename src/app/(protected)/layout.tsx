@@ -1,5 +1,6 @@
 import { requireAuth } from '@/lib/auth/guard';
 import { TransactionFAB } from '@/app/components/TransactionFAB';
+import { ChatbotFAB } from '@/components/chatbot/ChatbotFAB';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
     <>
       {children}
       <TransactionFAB />
+      <ChatbotFAB />
     </>
   );
 }

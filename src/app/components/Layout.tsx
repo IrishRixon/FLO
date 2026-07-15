@@ -24,7 +24,6 @@ export function Layout({ children }: LayoutProps) {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setSupabaseUser(user);
     });
-    console.log(supabaseUser?.user_metadata);
   }, []);
 
   const urlExceptions = ['/login', '/signup'];
