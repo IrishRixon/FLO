@@ -7,6 +7,7 @@ import {
   X,
   Bot,
   User,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -35,6 +36,7 @@ interface Message {
 export function ChatbotFAB() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [configId, setConfigId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([
@@ -45,7 +47,7 @@ export function ChatbotFAB() {
       timestamp: new Date(),
     },
   ]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const md = markdownit({
     html: false
@@ -72,7 +74,7 @@ export function ChatbotFAB() {
 
   const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed) return;
+    if (!trimmed || isLoading) return;
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -83,37 +85,51 @@ export function ChatbotFAB() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setIsLoading(true);
 
-    console.log(configId, "config id");
+    try {
+      const response = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: trimmed,
+          config_id: configId,
+          user_id: supabaseUser?.id
+        }),
+      })
 
-    const response = await fetch('/api/chatbot', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: trimmed,
-        config_id: configId
-      }),
-    })
+      const aiMessageData: ChatbotApi = await response.json()
 
-    const aiMessageData: { message: string, config_id: string | null } = await response.json()
+      if (!response.ok) {
+        throw new Error(aiMessageData.message || 'Failed to get response');
+      }
 
-    console.log(aiMessageData.config_id, "aiMessageData.config_id");
-    setConfigId(aiMessageData.config_id)
+      console.log(aiMessageData.config_id, "aiMessageData.config_id");
+      setConfigId(aiMessageData.config_id)
 
-    const aiMessage: Message = {
-      id: `user-${Date.now()}`,
-      role: "assistant",
-      content: md.render(aiMessageData.message),
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, aiMessage]);
-
+      const aiMessage: Message = {
+        id: `user-${Date.now()}`,
+        role: "assistant",
+        content: md.render(aiMessageData.message),
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        role: "assistant",
+        content: `<p class="text-destructive">${error instanceof Error ? error.message : 'Something went wrong. Please try again.'}</p>`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -147,7 +163,7 @@ export function ChatbotFAB() {
         </motion.button>
       </DrawerTrigger>
 
-      <DrawerContent className="h-full max-h-full rounded-none border-l">
+      <DrawerContent className="h-full max-w-200 rounded-none border-l">
         <div className="flex flex-col h-full">
           {/* Header */}
           <DrawerHeader className="border-b border-border shrink-0">
@@ -166,7 +182,7 @@ export function ChatbotFAB() {
           </DrawerHeader>
 
           {/* Messages */}
-          <ScrollArea className="flex-1 px-4 py-4" >
+          <ScrollArea className="flex-1 px-4 py-4 select-text" >
             <div className="space-y-4 max-w-2xl mx-auto w-full">
               <AnimatePresence initial={false}>
                 {messages.map((message) => (
@@ -192,7 +208,7 @@ export function ChatbotFAB() {
                     {/* Message bubble */}
                     <div
                       className={cn(
-                        `max-w-[75%] px-4 py-2.5 rounded-2xl 
+                        `max-w-[75%] px-4 py-2.5 rounded-2xl select-text whitespace-pre-wrap
                         text-sm leading-relaxed [&_ul]:list-disc 
                         [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 
                         [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_code]:bg-muted-foreground/10 
@@ -217,6 +233,39 @@ export function ChatbotFAB() {
                   </motion.div>
                 ))}
               </AnimatePresence>
+
+              {/* Typing indicator */}
+              {isLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex gap-3 justify-start"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                    <Bot size={16} className="text-primary" />
+                  </div>
+                  <div className="bg-muted text-foreground rounded-2xl rounded-bl-md px-4 py-3">
+                    <div className="flex gap-1.5">
+                      <motion.div
+                        className="w-2 h-2 rounded-full bg-muted-foreground/40"
+                        animate={{ y: [0, -4, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0 }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 rounded-full bg-muted-foreground/40"
+                        animate={{ y: [0, -4, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.15 }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 rounded-full bg-muted-foreground/40"
+                        animate={{ y: [0, -4, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
@@ -225,27 +274,31 @@ export function ChatbotFAB() {
           <div className="shrink-0 border-t border-border p-4 bg-background">
             <div className="max-w-2xl mx-auto w-full flex items-center gap-2">
               <div className="flex-1 flex items-center gap-2 bg-input-background rounded-xl px-4 py-2.5 border border-border">
-                <input
+                <textarea
                   ref={inputRef}
-                  type="text"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+                  }}
                   onKeyDown={handleKeyDown}
                   placeholder="Type your message..."
-                  className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
+                  rows={1}
+                  className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground resize-none p-0 overflow-y-auto"
                 />
               </div>
               <Button
                 onClick={handleSend}
-                disabled={!input.trim()}
+                disabled={!input.trim() || isLoading}
                 className={cn(
                   "p-3 rounded-xl transition-colors shrink-0",
-                  input.trim()
+                  input.trim() && !isLoading
                     ? "bg-primary text-primary-foreground hover:bg-primary/90"
                     : "bg-muted text-muted-foreground cursor-not-allowed"
                 )}
               >
-                <Send size={18} />
+                {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </Button>
             </div>
           </div>

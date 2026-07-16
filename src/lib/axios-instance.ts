@@ -3,7 +3,7 @@ import 'server-only'
 
 let resolveBaseUrl: string | undefined
 
-const REQUEST_TIMEOUT  = 30000;
+const REQUEST_TIMEOUT  = 120000; // Increased from 30s to 120s for LLM response times
 
 export const apiClient = axios.create({
     timeout: REQUEST_TIMEOUT,
