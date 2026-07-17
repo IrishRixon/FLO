@@ -100,30 +100,46 @@ export function ChatbotFAB() {
         }),
       })
 
-      const aiMessageData: ChatbotApi = await response.json()
-
-      if (!response.ok) {
-        throw new Error(aiMessageData.message || 'Failed to get response');
+      if (!response.ok || !response.body) {
+        throw new Error("Streaming failed");
       }
 
-      console.log(aiMessageData.config_id, "aiMessageData.config_id");
-      setConfigId(aiMessageData.config_id)
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-      const aiMessage: Message = {
-        id: `user-${Date.now()}`,
-        role: "assistant",
-        content: md.render(aiMessageData.message),
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      const errorMessage: Message = {
-        id: `error-${Date.now()}`,
-        role: "assistant",
-        content: `<p class="text-destructive">${error instanceof Error ? error.message : 'Something went wrong. Please try again.'}</p>`,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      setConfigId(response.headers.get("X-Config-ID"))
+      let aiContent = "";
+
+      // 👇 Create empty assistant message FIRST
+      const aiMessageId = `assistant-${Date.now()}`;
+
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: aiMessageId,
+          role: "assistant",
+          content: "",
+          timestamp: new Date(),
+        }
+      ]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        aiContent += chunk;
+
+        // 👇 Update message LIVE
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMessageId
+              ? { ...msg, content: md.render(aiContent) }
+              : msg
+          )
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -215,7 +231,8 @@ export function ChatbotFAB() {
                         [&_code]:px-1 [&_code]:rounded [&_pre]:bg-muted-foreground/10 [&_pre]:p-3 
                         [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_h3]:font-semibold [&_h3]:text-base 
                         [&_h4]:font-semibold [&_h4]:text-sm [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground/30
-                         [&_blockquote]:pl-3 [&_blockquote]:italic [&_a]:underline [&_a]:text-primary`,
+                         [&_blockquote]:pl-3 [&_blockquote]:italic [&_a]:underline [&_a]:text-primary
+                         [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:px-2 [&_th]:py-1 [&_th]:bg-muted-foreground/10 [&_th]:font-semibold [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1`,
                         message.role === "user"
                           ? "bg-primary text-primary-foreground rounded-br-md"
                           : "bg-muted text-foreground rounded-bl-md"

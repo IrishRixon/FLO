@@ -1,38 +1,50 @@
-import { apiClient } from "@/lib/axios-instance";
-import { AxiosError } from "axios";
+const REQUEST_TIMEOUT = 120000; // 120s for LLM response times
 
-export async function sendMessage 
-(
-    message: string, 
+function getBaseUrl(): string {
+    const envURL = process.env.LOCAL_ENDPOINT;
+    if (!envURL) {
+        throw new Error("Endpoint is not defined");
+    }
+    return envURL;
+}
+
+export async function sendMessage(
+    message: string,
     user_id: string,
-    config_id?: string | null, 
-) {
-    console.log(config_id, "config id");
-    
+    config_id?: string | null,
+): Promise<Response> {
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
     try {
-        const res = await apiClient.post(
-            '/chatbot/message',
+        const response = await fetch(
+            `${getBaseUrl()}/chatbot/message`,
             {
-                message,
-                config_id,
-                user_id
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message,
+                    config_id,
+                    user_id
+                }),
+                signal: controller.signal,
             }
         );
 
-        return res.data
+        return response;
     } catch (error) {
-        if (error instanceof AxiosError) {
-            if (error.code === 'ECONNABORTED') {
-                throw new Error('Request timed out. The chatbot is taking too long to respond. Please try again.');
-            }
-            if (error.response) {
-                throw new Error(`Backend error: ${error.response.status} - ${error.response.data?.message || error.message}`);
-            }
-            if (error.request) {
-                throw new Error('No response from chatbot backend. Please check if the service is running.');
-            }
+        if (error instanceof DOMException && error.name === 'AbortError') {
+            throw new Error('Request timed out. The chatbot is taking too long to respond. Please try again.');
+        }
+        if (error instanceof TypeError && error.message === 'fetch failed') {
+            throw new Error('No response from chatbot backend. Please check if the service is running.');
         }
         console.error(error);
         throw new Error('An unexpected error occurred while sending the message.');
+    } finally {
+        clearTimeout(timeoutId);
     }
 }
