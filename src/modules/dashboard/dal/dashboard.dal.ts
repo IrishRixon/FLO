@@ -55,7 +55,7 @@ export async function getMonthlySpending(): Promise<MonthlySpending[] | null> {
 
         return monthlySpending ?? null;
     } catch (error) {
-        console.log(`error: ${error}`);
+        console.error(`error: ${error}`);
         return null;
     }
 }

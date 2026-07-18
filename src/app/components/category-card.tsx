@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Progress } from "@/app/components/ui/progress";
-import { iconMap } from "@/iconlist/icon-list";
+import * as LucideIcons from "lucide-react"
 import { CategoriesWithBudgetVsActual } from "@/types";
 import { Pencil, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { EditBudgetDialog } from "@/app/components/edit-budget-dialog";
+import { toPascalCase } from "@/lib/utils/format";
 
 function getStatus(spent: number, budget: number): "ok" | "warning" | "over" {
   if (budget === 0) return "ok";
@@ -26,7 +27,8 @@ interface CategoryCardProps {
 
 export function CategoryCard({ category }: CategoryCardProps) {
   const [editCategory, setEditCategory] = useState<CategoriesWithBudgetVsActual | null>(null);
-  const Icon = iconMap[category.icon];
+  const iconKey = toPascalCase(category.icon)
+  const Icon = LucideIcons[iconKey as keyof typeof LucideIcons] as React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
   const status = getStatus(category.budgetVsActual.spent_amount, category.budgetVsActual.budget_amount);
   const pct = Math.min((category.budgetVsActual.spent_amount / category.budgetVsActual.budget_amount) * 100, 100);
   const remaining = category.budgetVsActual.budget_amount - category.budgetVsActual.spent_amount;

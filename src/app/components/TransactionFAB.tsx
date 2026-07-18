@@ -82,7 +82,7 @@ export function TransactionFAB({ onSuccess }: TransactionFABProps) {
   useEffect(() => {
     async function loadCategories() {
       try {
-        const res = await fetch(`/api/categories?type=${selectedType}`);
+        const res = await fetch(`/api/categories`);
         if (!res.ok) throw new Error('Failed to fetch categories');
         const data: Category[] = await res.json();
         setCategories(data);
@@ -115,6 +115,14 @@ export function TransactionFAB({ onSuccess }: TransactionFABProps) {
       form.setValue('category', suggestedCategory.name);
     }
   }, [suggestedCategory, form]);
+
+  // Sync type when category changes (type is derived from the selected category)
+  useEffect(() => {
+    const cat = categories.find((c) => c.name === selectedCategory);
+    if (cat) {
+      form.setValue('type', cat.type);
+    }
+  }, [selectedCategory, categories, form]);
 
   const handleSave = async (data: FabFormValues) => {
     setIsSaving(true);
