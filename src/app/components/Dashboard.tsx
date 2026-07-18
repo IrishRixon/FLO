@@ -4,8 +4,11 @@ import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis
 import { Budget, CategoriesWithBudgetVsActual, MonthlyBudget, MonthlySpending, TransactionWithCategory } from '@/types';
 import { iconMap } from '@/iconlist/icon-list';
 import { ChevronRight } from 'lucide-react';
+import * as LucideIcons from "lucide-react";
+
 import Link from 'next/link';
 import { DashboardCard } from '@/app/components/dashboard-card';
+import { toPascalCase } from '@/lib/utils/format';
 
 function formatDateLabel(dateStr: string): string {
   const date = new Date(dateStr);
@@ -231,8 +234,8 @@ export function Dashboard({ monthlySpending, transactionsWithCategory, categorie
         {transactionsWithCategory && transactionsWithCategory.length > 0 ? (
           <div className="space-y-1">
             {transactionsWithCategory.map((transaction) => {
-
-              const Icon = iconMap[transaction.categories?.icon];
+              const iconKey = toPascalCase(transaction.categories?.icon)
+              const Icon = LucideIcons[iconKey as keyof typeof LucideIcons] as React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
               return (
                 <div
                   key={transaction.id}

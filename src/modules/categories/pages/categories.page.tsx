@@ -1,14 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { CategoryCard } from "@/app/components/category-card";
 import { DashboardCard } from "@/app/components/dashboard-card";
+import { Button } from "@/app/components/ui/button";
+import { IconPickerDialog } from "@/app/components/icon-picker-dialog";
 import { CategoriesWithBudgetVsActual, Category } from "@/types";
+import { Plus } from "lucide-react";
 
 interface Props {
   categories: CategoriesWithBudgetVsActual[];
 }
 
 export function CategoriesPage({ categories }: Props) {
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+
   const totalBudget = categories.reduce((acc, category) => acc + category.budgetVsActual.budget_amount, 0);
   const totalSpent = categories.reduce((acc, category) => acc + category.budgetVsActual.spent_amount, 0);
   const overBudget = categories.filter((category) => category.budgetVsActual.spent_amount > category.budgetVsActual.budget_amount).length;
@@ -17,10 +23,25 @@ export function CategoriesPage({ categories }: Props) {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h2 className="text-2xl font-medium mb-1" style={{ fontFamily: 'var(--font-display)' }}>Categories</h2>
-        <p className="text-text-secondary text-sm">Track and set budget in each categories</p>
+      <div className="flex justify-between items-center">
+        <div className="mb-8">
+          <h2 className="text-2xl font-medium mb-1" style={{ fontFamily: 'var(--font-display)' }}>Categories</h2>
+          <p className="text-text-secondary text-sm">Track and set budget in each categories</p>
+        </div>
+        <Button
+          className="h-10 rounded-lg px-6"
+          variant={"default"}
+          onClick={() => setIconPickerOpen(true)}
+        >
+          <Plus className="mr-2" size={18} />
+          Create Category
+        </Button>
       </div>
+
+      <IconPickerDialog
+        open={iconPickerOpen}
+        onOpenChange={setIconPickerOpen}
+      />
 
       <div className="grid grid-cols-4 gap-4 mb-8">
         {[
